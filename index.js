@@ -1,139 +1,92 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+
 import {
     Client,
     GatewayIntentBits
 } from "discord.js";
 
+
+/* =========================================
+   EXPRESS APP
+========================================= */
+
 const app = express();
 
 app.use(cors());
+
 app.use(express.json());
 
+
+/* =========================================
+   DISCORD CLIENT
+========================================= */
+
 const client = new Client({
+
     intents: [
+
         GatewayIntentBits.Guilds,
+
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildPresences
+
+        GatewayIntentBits.GuildPresences,
+
+        GatewayIntentBits.GuildVoiceStates
+
     ]
+
 });
+
+
+/* =========================================
+   ENVIRONMENT VARIABLES
+========================================= */
 
 const PORT =
     process.env.PORT || 3000;
+
 
 const GUILD_ID =
     process.env.GUILD_ID;
 
 
-/* =========================
+/* =========================================
    DISCORD BOT READY
-========================= */
+========================================= */
 
-client.once("ready", () => {
+client.once(
+    "ready",
+    () => {
 
-    console.log(
-        `Bot logged in as ${client.user.tag}`
-    );
-
-    console.log(
-        `Connected to ${client.guilds.cache.size} server(s)`
-    );
-
-});
+        console.log(
+            `Bot logged in as ${client.user.tag}`
+        );
 
 
-/* =========================
-   API STATUS
-========================= */
-
-app.get(
-    "/",
-    (req, res) => {
-
-        res.json({
-            success: true,
-            name: "Morichika Stats API",
-            status: "online"
-        });
-
-    }
-);
+        console.log(
+            `Connected to ${client.guilds.cache.size} server(s)`
+        );
 
 
-/* =========================
-   SERVER STATS API
-========================= */
-
-app.get(
-    "/api/stats",
-    async (req, res) => {
-
-        try {
-
-            const guild =
-                await client.guilds.fetch(
-                    GUILD_ID
-                );
-
-            const members =
-                await guild.members.fetch();
-
-            const totalMembers =
-                guild.memberCount;
-
-            const onlineMembers =
-                members.filter(
-                    member =>
-                        member.presence &&
-                        member.presence.status !==
-                        "offline"
-                ).size;
-
-            const boostLevel =
-                guild.premiumTier;
-
-            const totalBoosts =
-                guild.premiumSubscriptionCount || 0;
-
-            res.json({
-
-                success: true,
-
-                server: {
-                    id: guild.id,
-                    name: guild.name,
-                    icon: guild.iconURL({
-                        extension: "png",
-                        size: 512
-                    })
-                },
-
-                stats: {
-                    members: totalMembers,
-                    online: onlineMembers,
-                    boostLevel: boostLevel,
-                    boosts: totalBoosts,
-                    status: "online"
-                }
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Stats Error:",
-                error
+        const guild =
+            client.guilds.cache.get(
+                GUILD_ID
             );
 
-            res.status(500).json({
 
-                success: false,
+        if (guild) {
 
-                error:
-                    "Failed to fetch Discord server stats"
+            console.log(
+                `Connected to: ${guild.name}`
+            );
 
-            });
+        } else {
+
+            console.log(
+                "Warning: Target server not found"
+            );
 
         }
 
@@ -141,13 +94,41 @@ app.get(
 );
 
 
-/* =========================
+/* =========================================
+   API STATUS
+========================================= */
+
+app.get(
+    "/",
+    (req, res) => {
+
+        res.json({
+
+            success:
+                true,
+
+            name:
+                "Morichika Stats API",
+
+            status:
+                "online"
+
+        });
+
+    }
+);
+
+
+/* =========================================
    SERVER INFORMATION API
-========================= */
+========================================= */
 
 app.get(
     "/api/server",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -156,9 +137,11 @@ app.get(
                     GUILD_ID
                 );
 
+
             res.json({
 
-                success: true,
+                success:
+                    true,
 
                 server: {
 
@@ -172,6 +155,7 @@ app.get(
                         guild.iconURL({
                             extension:
                                 "png",
+
                             size:
                                 512
                         }),
@@ -180,6 +164,7 @@ app.get(
                         guild.bannerURL({
                             extension:
                                 "png",
+
                             size:
                                 2048
                         }),
@@ -202,12 +187,15 @@ app.get(
 
             });
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Server Info Error:",
                 error
             );
+
 
             res.status(
                 500
@@ -227,13 +215,16 @@ app.get(
 );
 
 
-/* =========================
-   LIVE VOICE CHANNELS API
-========================= */
+/* =========================================
+   SERVER STATS API
+========================================= */
 
 app.get(
-    "/api/voice",
-    async (req, res) => {
+    "/api/stats",
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -242,60 +233,45 @@ app.get(
                     GUILD_ID
                 );
 
-            const channels =
-                guild.channels.cache
-                    .filter(
-                        channel =>
-                            channel.isVoiceBased() &&
-                            channel.members.size > 0
-                    )
-                    .map(
-                        channel => {
 
-                            return {
+            const members =
+                await guild.members.fetch();
 
-                                id:
-                                    channel.id,
 
-                                name:
-                                    channel.name,
+            const totalMembers =
+                guild.memberCount;
 
-                                memberCount:
-                                    channel.members.size,
 
-                                members:
-                                    channel.members.map(
-                                        member => {
+            const onlineMembers =
+                members.filter(
+                    member =>
 
-                                            return {
+                        member.presence &&
 
-                                                id:
-                                                    member.id,
+                        member.presence.status !==
+                        "offline"
 
-                                                name:
-                                                    member.displayName,
+                ).size;
 
-                                                username:
-                                                    member.user.username,
 
-                                                avatar:
-                                                    member.displayAvatarURL({
-                                                        extension:
-                                                            "png",
+            const inVoiceMembers =
+                members.filter(
+                    member =>
 
-                                                        size:
-                                                            128
-                                                    })
+                        member.voice &&
 
-                                            };
+                        member.voice.channel
 
-                                        }
-                                    )
+                ).size;
 
-                            };
 
-                        }
-                    );
+            const boostLevel =
+                guild.premiumTier;
+
+
+            const totalBoosts =
+                guild.premiumSubscriptionCount ||
+                0;
 
 
             res.json({
@@ -303,31 +279,55 @@ app.get(
                 success:
                     true,
 
-                totalChannels:
-                    channels.length,
+                server: {
 
-                totalMembers:
-                    channels.reduce(
-                        (
-                            total,
-                            channel
-                        ) =>
-                            total +
-                            channel.memberCount,
+                    id:
+                        guild.id,
 
-                        0
-                    ),
+                    name:
+                        guild.name,
 
-                channels:
-                    channels
+                    icon:
+                        guild.iconURL({
+                            extension:
+                                "png",
+
+                            size:
+                                512
+                        })
+
+                },
+
+                stats: {
+
+                    members:
+                        totalMembers,
+
+                    online:
+                        onlineMembers,
+
+                    boostLevel:
+                        boostLevel,
+
+                    boosts:
+                        totalBoosts,
+
+                    inVoice:
+                        inVoiceMembers,
+
+                    status:
+                        "online"
+
+                }
 
             });
 
-
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
-                "Voice Channels Error:",
+                "Stats Error:",
                 error
             );
 
@@ -340,7 +340,7 @@ app.get(
                     false,
 
                 error:
-                    "Failed to fetch live voice channels"
+                    "Failed to fetch Discord server stats"
 
             });
 
@@ -350,13 +350,16 @@ app.get(
 );
 
 
-/* =========================
+/* =========================================
    LIVE ONLINE MEMBERS API
-========================= */
+========================================= */
 
 app.get(
     "/api/members/online",
-    async (req, res) => {
+    async (
+        req,
+        res
+    ) => {
 
         try {
 
@@ -433,8 +436,9 @@ app.get(
 
             });
 
-
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Online Members Error:",
@@ -460,10 +464,423 @@ app.get(
 );
 
 
+/* =========================================
+   LIVE VOICE CHANNELS API
+========================================= */
 
-/* =========================
+app.get(
+    "/api/voice",
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const guild =
+                await client.guilds.fetch(
+                    GUILD_ID
+                );
+
+
+            const channels =
+                guild.channels.cache
+                    .filter(
+                        channel =>
+
+                            channel.isVoiceBased() &&
+
+                            channel.members.size > 0
+
+                    )
+                    .map(
+                        channel => {
+
+                            return {
+
+                                id:
+                                    channel.id,
+
+                                name:
+                                    channel.name,
+
+                                memberCount:
+                                    channel.members.size,
+
+                                members:
+                                    channel.members.map(
+                                        member => {
+
+                                            return {
+
+                                                id:
+                                                    member.id,
+
+                                                name:
+                                                    member.displayName,
+
+                                                username:
+                                                    member.user.username,
+
+                                                avatar:
+                                                    member.displayAvatarURL({
+                                                        extension:
+                                                            "png",
+
+                                                        size:
+                                                            128
+                                                    })
+
+                                            };
+
+                                        }
+                                    )
+
+                            };
+
+                        }
+                    );
+
+
+            const totalMembers =
+                channels.reduce(
+                    (
+                        total,
+                        channel
+                    ) =>
+
+                        total +
+                        channel.memberCount,
+
+                    0
+                );
+
+
+            res.json({
+
+                success:
+                    true,
+
+                totalChannels:
+                    channels.length,
+
+                totalMembers:
+                    totalMembers,
+
+                channels:
+                    channels
+
+            });
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "Voice Channels Error:",
+                error
+            );
+
+
+            res.status(
+                500
+            ).json({
+
+                success:
+                    false,
+
+                error:
+                    "Failed to fetch live voice channels"
+
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   LIVE ROSTER API
+========================================= */
+
+app.get(
+    "/api/roster",
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const guild =
+                await client.guilds.fetch(
+                    GUILD_ID
+                );
+
+
+            const members =
+                await guild.members.fetch();
+
+
+            /* =====================================
+               MORICHIKA STAFF ROLES
+            ===================================== */
+
+            const roleGroups = [
+
+                {
+
+                    key:
+                        "founder",
+
+                    name:
+                        "Founder",
+
+                    icon:
+                        "👑"
+
+                },
+
+                {
+
+                    key:
+                        "co-founder",
+
+                    name:
+                        "Co-Founder",
+
+                    icon:
+                        "🛡️"
+
+                },
+
+                {
+
+                    key:
+                        "senior-mod",
+
+                    name:
+                        "Senior Mod",
+
+                    icon:
+                        "⚔️"
+
+                },
+
+                {
+
+                    key:
+                        "admin",
+
+                    name:
+                        "Admin",
+
+                    icon:
+                        "🔱"
+
+                },
+
+                {
+
+                    key:
+                        "moderator",
+
+                    name:
+                        "Moderator",
+
+                    icon:
+                        "🛠️"
+
+                }
+
+            ];
+
+
+            const roster = {};
+
+
+            /* =====================================
+               FIND MEMBERS BY ROLE
+            ===================================== */
+
+            for (
+                const group
+                of roleGroups
+            ) {
+
+                const role =
+                    guild.roles.cache.find(
+                        role =>
+
+                            role.name.toLowerCase() ===
+                            group.name.toLowerCase()
+
+                    );
+
+
+                if (!role) {
+
+                    roster[
+                        group.key
+                    ] = {
+
+                        name:
+                            group.name,
+
+                        icon:
+                            group.icon,
+
+                        count:
+                            0,
+
+                        members:
+                            []
+
+                    };
+
+
+                    continue;
+
+                }
+
+
+                const roleMembers =
+                    members
+                        .filter(
+                            member =>
+
+                                member.roles.cache.has(
+                                    role.id
+                                )
+
+                        )
+                        .map(
+                            member => {
+
+                                return {
+
+                                    id:
+                                        member.id,
+
+                                    username:
+                                        member.user.username,
+
+                                    displayName:
+                                        member.displayName,
+
+                                    avatar:
+                                        member.displayAvatarURL({
+                                            extension:
+                                                "png",
+
+                                            size:
+                                                256
+                                        }),
+
+                                    online:
+
+                                        member.presence &&
+
+                                        member.presence.status !==
+                                        "offline",
+
+                                    status:
+
+                                        member.presence?.status ||
+
+                                        "offline"
+
+                                };
+
+                            }
+                        );
+
+
+                roster[
+                    group.key
+                ] = {
+
+                    name:
+                        group.name,
+
+                    icon:
+                        group.icon,
+
+                    count:
+                        roleMembers.length,
+
+                    members:
+                        roleMembers
+
+                };
+
+            }
+
+
+            /* =====================================
+               TOTAL ONLINE MEMBERS
+            ===================================== */
+
+            const onlineCount =
+                members.filter(
+                    member =>
+
+                        !member.user.bot &&
+
+                        member.presence &&
+
+                        member.presence.status !==
+                        "offline"
+
+                ).size;
+
+
+            res.json({
+
+                success:
+                    true,
+
+                online:
+                    onlineCount,
+
+                roster:
+                    roster
+
+            });
+
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "Roster Error:",
+                error
+            );
+
+
+            res.status(
+                500
+            ).json({
+
+                success:
+                    false,
+
+                error:
+                    "Failed to fetch live roster"
+
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================================
    START API SERVER
-========================= */
+========================================= */
 
 app.listen(
     PORT,
@@ -477,9 +894,9 @@ app.listen(
 );
 
 
-/* =========================
+/* =========================================
    LOGIN DISCORD BOT
-========================= */
+========================================= */
 
 client.login(
     process.env.DISCORD_TOKEN
