@@ -142,6 +142,92 @@ app.get(
 
 
 /* =========================
+   SERVER INFORMATION API
+========================= */
+
+app.get(
+    "/api/server",
+    async (req, res) => {
+
+        try {
+
+            const guild =
+                await client.guilds.fetch(
+                    GUILD_ID
+                );
+
+            res.json({
+
+                success: true,
+
+                server: {
+
+                    id:
+                        guild.id,
+
+                    name:
+                        guild.name,
+
+                    icon:
+                        guild.iconURL({
+                            extension:
+                                "png",
+                            size:
+                                512
+                        }),
+
+                    banner:
+                        guild.bannerURL({
+                            extension:
+                                "png",
+                            size:
+                                2048
+                        }),
+
+                    description:
+                        guild.description ||
+                        "Where Kind Souls Gather Beneath the Desert Moon.",
+
+                    memberCount:
+                        guild.memberCount,
+
+                    boostLevel:
+                        guild.premiumTier,
+
+                    totalBoosts:
+                        guild.premiumSubscriptionCount ||
+                        0
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Server Info Error:",
+                error
+            );
+
+            res.status(
+                500
+            ).json({
+
+                success:
+                    false,
+
+                error:
+                    "Failed to fetch server information"
+
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================
    START API SERVER
 ========================= */
 
