@@ -228,6 +228,130 @@ app.get(
 
 
 /* =========================
+   LIVE VOICE CHANNELS API
+========================= */
+
+app.get(
+    "/api/voice",
+    async (req, res) => {
+
+        try {
+
+            const guild =
+                await client.guilds.fetch(
+                    GUILD_ID
+                );
+
+            const channels =
+                guild.channels.cache
+                    .filter(
+                        channel =>
+                            channel.isVoiceBased() &&
+                            channel.members.size > 0
+                    )
+                    .map(
+                        channel => {
+
+                            return {
+
+                                id:
+                                    channel.id,
+
+                                name:
+                                    channel.name,
+
+                                memberCount:
+                                    channel.members.size,
+
+                                members:
+                                    channel.members.map(
+                                        member => {
+
+                                            return {
+
+                                                id:
+                                                    member.id,
+
+                                                name:
+                                                    member.displayName,
+
+                                                username:
+                                                    member.user.username,
+
+                                                avatar:
+                                                    member.displayAvatarURL({
+                                                        extension:
+                                                            "png",
+
+                                                        size:
+                                                            128
+                                                    })
+
+                                            };
+
+                                        }
+                                    )
+
+                            };
+
+                        }
+                    );
+
+
+            res.json({
+
+                success:
+                    true,
+
+                totalChannels:
+                    channels.length,
+
+                totalMembers:
+                    channels.reduce(
+                        (
+                            total,
+                            channel
+                        ) =>
+                            total +
+                            channel.memberCount,
+
+                        0
+                    ),
+
+                channels:
+                    channels
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Voice Channels Error:",
+                error
+            );
+
+
+            res.status(
+                500
+            ).json({
+
+                success:
+                    false,
+
+                error:
+                    "Failed to fetch live voice channels"
+
+            });
+
+        }
+
+    }
+);
+
+
+
+/* =========================
    START API SERVER
 ========================= */
 
