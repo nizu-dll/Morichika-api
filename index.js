@@ -356,10 +356,7 @@ app.get(
 
 app.get(
     "/api/members/online",
-    async (
-        req,
-        res
-    ) => {
+    async (req, res) => {
 
         try {
 
@@ -367,6 +364,21 @@ app.get(
                 await client.guilds.fetch(
                     GUILD_ID
                 );
+
+
+            if (!guild) {
+
+                return res.status(404).json({
+
+                    success:
+                        false,
+
+                    error:
+                        "Discord server not found"
+
+                });
+
+            }
 
 
             const members =
@@ -378,15 +390,23 @@ app.get(
                     .filter(
                         member => {
 
+                            if (member.user.bot) {
+
+                                return false;
+
+                            }
+
+
+                            if (!member.presence) {
+
+                                return false;
+
+                            }
+
+
                             return (
-
-                                !member.user.bot &&
-
-                                member.presence &&
-
                                 member.presence.status !==
                                 "offline"
-
                             );
 
                         }
@@ -415,12 +435,18 @@ app.get(
                                     }),
 
                                 status:
-                                    member.presence.status
+                                    member.presence?.status ||
+                                    "offline"
 
                             };
 
                         }
                     );
+
+
+            console.log(
+                `Online members found: ${onlineMembers.length}`
+            );
 
 
             res.json({
@@ -436,12 +462,14 @@ app.get(
 
             });
 
-        } catch (
-            error
-        ) {
+
+        } catch (error) {
 
             console.error(
-                "Online Members Error:",
+                "ONLINE MEMBERS ERROR:"
+            );
+
+            console.error(
                 error
             );
 
@@ -454,7 +482,10 @@ app.get(
                     false,
 
                 error:
-                    "Failed to fetch online members"
+                    "Failed to fetch online members",
+
+                details:
+                    error.message
 
             });
 
@@ -462,7 +493,6 @@ app.get(
 
     }
 );
-
 
 /* =========================================
    LIVE VOICE CHANNELS API
