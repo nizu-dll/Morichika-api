@@ -350,6 +350,116 @@ app.get(
 );
 
 
+/* =========================
+   LIVE ONLINE MEMBERS API
+========================= */
+
+app.get(
+    "/api/members/online",
+    async (req, res) => {
+
+        try {
+
+            const guild =
+                await client.guilds.fetch(
+                    GUILD_ID
+                );
+
+
+            const members =
+                await guild.members.fetch();
+
+
+            const onlineMembers =
+                members
+                    .filter(
+                        member => {
+
+                            return (
+
+                                !member.user.bot &&
+
+                                member.presence &&
+
+                                member.presence.status !==
+                                "offline"
+
+                            );
+
+                        }
+                    )
+                    .map(
+                        member => {
+
+                            return {
+
+                                id:
+                                    member.id,
+
+                                username:
+                                    member.user.username,
+
+                                displayName:
+                                    member.displayName,
+
+                                avatar:
+                                    member.displayAvatarURL({
+                                        extension:
+                                            "png",
+
+                                        size:
+                                            256
+                                    }),
+
+                                status:
+                                    member.presence.status
+
+                            };
+
+                        }
+                    );
+
+
+            res.json({
+
+                success:
+                    true,
+
+                count:
+                    onlineMembers.length,
+
+                members:
+                    onlineMembers
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Online Members Error:",
+                error
+            );
+
+
+            res.status(
+                500
+            ).json({
+
+                success:
+                    false,
+
+                error:
+                    "Failed to fetch online members"
+
+            });
+
+        }
+
+    }
+);
+
+
 
 /* =========================
    START API SERVER
