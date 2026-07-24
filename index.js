@@ -909,6 +909,225 @@ app.get(
 
 
 /* =========================================
+   LEADERSHIP API
+========================================= */
+
+app.get(
+    "/api/leadership",
+    async (req, res) => {
+
+        try {
+
+            const guild =
+                await client.guilds.fetch(
+                    GUILD_ID
+                );
+
+
+            const members =
+                await guild.members.fetch();
+
+
+            const leadershipRoles = [
+
+                {
+                    name:
+                        "Founder",
+
+                    rank:
+                        "Founder",
+
+                    icon:
+                        "👑"
+                },
+
+                {
+                    name:
+                        "Co-Founder",
+
+                    rank:
+                        "Co-Founder",
+
+                    icon:
+                        "🛡️"
+                },
+
+                {
+                    name:
+                        "Senior Mod",
+
+                    rank:
+                        "Senior Moderator",
+
+                    icon:
+                        "⚔️"
+                },
+
+                {
+                    name:
+                        "Admin",
+
+                    rank:
+                        "Administrator",
+
+                    icon:
+                        "🔱"
+                },
+
+                {
+                    name:
+                        "Moderator",
+
+                    rank:
+                        "Moderator",
+
+                    icon:
+                        "🛠️"
+                }
+
+            ];
+
+
+            const leadership = [];
+
+
+            for (
+                const roleInfo
+                of leadershipRoles
+            ) {
+
+                const role =
+                    guild.roles.cache.find(
+                        role =>
+
+                            role.name.toLowerCase() ===
+                            roleInfo.name.toLowerCase()
+
+                    );
+
+
+                if (!role) {
+
+                    continue;
+
+                }
+
+
+                const roleMembers =
+                    members.filter(
+                        member =>
+
+                            member.roles.cache.has(
+                                role.id
+                            )
+
+                    );
+
+
+                for (
+                    const member
+                    of roleMembers.values()
+                ) {
+
+                    leadership.push({
+
+                        id:
+                            member.id,
+
+                        username:
+                            member.user.username,
+
+                        displayName:
+                            member.displayName,
+
+                        avatar:
+                            member.displayAvatarURL({
+                                extension:
+                                    "png",
+
+                                size:
+                                    512
+                            }),
+
+                        role:
+                            roleInfo.name,
+
+                        rank:
+                            roleInfo.rank,
+
+                        icon:
+                            roleInfo.icon,
+
+                        online:
+
+                            member.presence &&
+
+                            member.presence.status !==
+                            "offline",
+
+                        status:
+
+                            member.presence?.status ||
+
+                            "offline",
+
+                        discordCreatedAt:
+                            member.user.createdAt,
+
+                        serverJoinedAt:
+                            member.joinedAt
+
+                    });
+
+                }
+
+            }
+
+
+            res.json({
+
+                success:
+                    true,
+
+                count:
+                    leadership.length,
+
+                leadership:
+                    leadership
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Leadership Error:",
+                error
+            );
+
+
+            res.status(
+                500
+            ).json({
+
+                success:
+                    false,
+
+                error:
+                    "Failed to fetch leadership data",
+
+                details:
+                    error.message
+
+            });
+
+        }
+
+    }
+);
+
+
+/* =========================================
    START API SERVER
 ========================================= */
 
